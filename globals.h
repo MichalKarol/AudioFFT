@@ -12,41 +12,9 @@
 
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#ifndef FFTMODULE_H
-#define FFTMODULE_H
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
-#include "globals.h"
-#include <QObject>
-#include <vector>
-#include <memory>
+const unsigned int DEFAULT_FFT_SIZE = 2048;
 
-using std::vector;
-using std::shared_ptr;
-
-class FFTModule : public QObject
-{
-    Q_OBJECT
-public:
-    explicit FFTModule(QObject *parent = 0);
-    ~FFTModule();
-
-private:
-    uint fftSize = DEFAULT_FFT_SIZE; // Default FFT size
-    double* array = nullptr;
-    int* ip = nullptr;
-    double* w = nullptr;
-
-    void clear();
-
-
-public slots:
-    void initialize();
-    void setFFTSize(uint fftSize);
-    void signalData(shared_ptr<vector<vector<float>>> data);
-
-signals:
-    void calculated(shared_ptr<vector<vector<double>>> data);
-    void error(QString error);
-};
-
-#endif // FFTMODULE_H
+#endif // GLOBALS_H

@@ -60,17 +60,11 @@ Widget::Widget(QWidget *parent): QWidget(parent) {
 
 
     fftSize = new PowersOf2SpinBox(this);
-    fftSize->setRange(1, 8192);
-    fftSize->setValue(1024);
+    fftSize->setRange(128, 16384);
+    fftSize->setValue(DEFAULT_FFT_SIZE);
     setFFTSize = new QPushButton("Set", this);
     connect(setFFTSize, &QPushButton::clicked, [&]() -> void {
-                imageWidth = ((fftSize->value() / 2) + 1);
-                image = QImage(((fftSize->value() / 2) + 1), imageHeight, QImage::Format_Grayscale8);
-                image.fill(Qt::white);
-                waterfall->setPixmap(QPixmap::fromImage(image));
                 emit fftSizeChange(fftSize->value());
-                this->updateGeometry();
-                this->resize(this->minimumWidth(), this->height());
             });
     QHBoxLayout* fftLayout = new QHBoxLayout();
     fftLayout->addWidget(fftSize);
@@ -100,10 +94,13 @@ void Widget::audioDeviceStateChanged(bool state) {
     startStopButton->setProperty("user_playIcon", !state);
 }
 
-void Widget::drawData(double** data, uint samplesNumber) {
+void Widget::drawData(std::shared_ptr<vector<vector<double>>> data) {
+    uint size = std::min(static_cast<uint>((*data).size()), imageHeight);
+    int offset = std::max(static_cast<int>((*data).size()) - static_cast<int>(imageHeight) - 1, 0);
+
     // Moving images samplesNumber up
-    for (uint  i = 0; i < imageHeight - samplesNumber; i++) {
-        uchar* pointerFrom = image.scanLine(i + samplesNumber);
+    for (uint  i = 0; i < imageHeight - size; i++) {
+        uchar* pointerFrom = image.scanLine(i + (*data).size());
         uchar* pointerTo = image.scanLine(i);
         for (uint  j = 0; j < imageWidth; j++) {
             *(pointerTo + j) = *(pointerFrom + j);
@@ -111,20 +108,34 @@ void Widget::drawData(double** data, uint samplesNumber) {
     }
 
     // Drawing data as a pixels
-    for (uint i = 0; i < samplesNumber; i++) {
-        uchar* pointer = image.scanLine(imageHeight - samplesNumber + i);
-        for (uint j = 0; j < imageWidth; j++) {
-           int color = data[i][j] * 255;
-           color = (color > 255 || color < 0 ? 0 : color);
-           *(pointer + j) = QColor(color, color, color).rgb();
+    for (uint i = 0; i < (*data).size(); i++) {
+        uchar* pointer = image.scanLine(imageHeight - size + i);
+        uint ratio = ((*data)[offset + i].size() - 1)/(imageWidth - 1);
+        uint revratio = (imageWidth - 1)/((*data)[offset + i].size() - 1);
+
+        if (ratio < 1) {
+            for (uint j = 0; j < (*data)[offset + i].size(); j++) {
+                int color = (*data)[offset + i][j] * 255;
+                color = (color > 255 || color < 0 ? 0 : color);
+                for(uint k = 0; k < revratio && j*revratio + k < imageWidth; k++) {
+                    *(pointer + j*revratio + k) = QColor(color, color, color).rgb();
+                }
+            }
+        } else {
+            for (uint j = 0; j < imageWidth; j++) {
+                uint sum = 0;
+                for(uint k = 0; k < ratio; k++) {
+                    int color = (*data)[offset + i][j + k] * 255;
+                    color = (color > 255 || color < 0 ? 0 : color);
+                    sum += color;
+                }
+                *(pointer + j) = QColor(sum/ratio, sum/ratio, sum/ratio).rgb();
+            }
         }
+
     }
 
     waterfall->setPixmap(QPixmap::fromImage(image));
-    for (uint i = 0; i < samplesNumber; i++) {
-        delete[] data[i]; data[i] = nullptr;
-    }
-    delete[] data; data = nullptr;
 }
 
 void Widget::error(QString error) {

@@ -4,6 +4,11 @@
 #
 #-------------------------------------------------
 
+#-------------------------------------------------
+# Project goals:
+# -create FFT waterfall from live audio input
+#-------------------------------------------------
+
 QT       += core gui multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -22,6 +27,7 @@ SOURCES += main.cpp\
 HEADERS  += widget.h \
     datahub.h \
     audioinput.h \
-    fftmodule.h
+    fftmodule.h \
+    globals.h
 
 CONFIG += c++11

@@ -22,6 +22,9 @@ int main(int argc, char *argv[])
     Widget widget;
     DataHub hub(&widget);
 
+    qRegisterMetaType<shared_ptr<vector<vector<float>>>>("shared_ptr<vector<vector<float>>>");
+    qRegisterMetaType<shared_ptr<vector<vector<double>>>>("shared_ptr<vector<vector<double>>>");
+
     widget.show();
 
     return a.exec();

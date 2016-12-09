@@ -76,7 +76,6 @@ void AudioInput::setAudioDeviceState(bool state) {
             }
         } else {
             input->stop();
-            device = nullptr;
             emit audioDeviceStateChange(false);
         }
     } else {
@@ -99,17 +98,16 @@ void AudioInput::readSignal() {
 
     if (static_cast<uint>(buffer.size()) > cutoffValue()) {
         uchar* bufferPointer = reinterpret_cast<uchar*>(buffer.data());
-        float** data = new float*[samplesAtOnce];
+        shared_ptr<vector<vector<float>>> data = std::make_shared<vector<vector<float>>>(samplesAtOnce, vector<float>(fftSize));
 
         for (uint i = 0; i < samplesAtOnce; i++) {
-            data[i] = new float[fftSize];
             for (uint j = 0; j < fftSize; j++) {
-                data[i][j] = qFromLittleEndian<float>(bufferPointer + (((i * fftSize) + j) * sizeof(float)));
+                (*data)[i][j] = qFromLittleEndian<float>(bufferPointer + (((i * fftSize) + j) * sizeof(float)));
             }
         }
 
         buffer.remove(0, cutoffValue());
-        emit signalData(data, samplesAtOnce);
+        emit signalData(data);
 
         // Tuning samples number
         counter++;

@@ -15,6 +15,7 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include "globals.h"
 #include <QWidget>
 #include <QPushButton>
 #include <QSpinBox>
@@ -26,6 +27,10 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QMessageBox>
+#include <vector>
+#include <memory>
+
+using std::vector;
 
 class Widget : public QWidget {
     Q_OBJECT
@@ -51,11 +56,11 @@ private:
     // Data
     QImage image;
     uint imageHeight = 600;
-    uint imageWidth = 513;
+    uint imageWidth = DEFAULT_FFT_SIZE / 2 + 1;
 
 public slots:
     void audioDeviceStateChanged(bool state);
-    void drawData(double** data, uint samplesNumber);
+    void drawData(std::shared_ptr<vector<vector<double>>> data);
     void error(QString error);
 
 private slots:
